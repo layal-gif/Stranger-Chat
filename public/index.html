@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <meta
+        name="description"
+        content="Anonymous stranger chat application"
+    >
+
+    <title>Stranger Chat</title>
+
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+
+    <link rel="preconnect"
+          href="https://fonts.gstatic.com"
+          crossorigin>
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
+        rel="stylesheet"
+    >
+
+    <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<div id="loadingScreen" class="loading-screen">
+    <div class="loader-logo">💬</div>
+    <h2>Stranger Chat</h2>
+
+    <div class="loading-dots">
+        <span></span>
+        <span></span>
+        <span></span>
+    </div>
+</div>
+
+<div class="background">
+    <div class="blob blob1"></div>
+    <div class="blob blob2"></div>
+    <div class="blob blob3"></div>
+    <div class="blob blob4"></div>
+</div>
+
+<nav class="top-nav">
+
+    <div class="brand">
+        <div class="brand-icon">💬</div>
+
+        <div>
+            <strong>Stranger Chat</strong>
+
+            <span
+                id="onlineText"
+                data-en="0 people online"
+                data-ar="0 مستخدم متصل"
+            >
+                0 people online
+            </span>
+        </div>
+    </div>
+
+    <div class="nav-actions">
+
+        <button
+            id="soundBtn"
+            class="icon-btn"
+            title="Sound"
+        >
+            🔊
+        </button>
+
+        <button
+            id="themeBtn"
+            class="icon-btn"
+            title="Change theme"
+        >
+            🌙
+        </button>
+
+        <button
+            id="languageBtn"
+            class="language-btn"
+        >
+            AR
+        </button>
+
+    </div>
+
+</nav>
+
+<main class="app">
+
+    <section
+        id="welcomeScreen"
+        class="glass welcome-screen"
+    >
+
+        <div class="hero-icon">
+            <div class="hero-ring"></div>
+            <span>👤</span>
+        </div>
+
+        <div class="rating">
+            ★★★★★
+        </div>
+
+        <h1 data-en="Meet Someone New"
+            data-ar="تعرّف على شخص جديد">
+            Meet Someone New
+        </h1>
+
+        <p
+            class="subtitle"
+            data-en="Start an instant anonymous conversation with someone from anywhere in the world."
+            data-ar="ابدأ محادثة فورية ومجهولة مع شخص من أي مكان في العالم."
+        >
+            Start an instant anonymous conversation with someone
+            from anywhere in the world.
+        </p>
+
+        <div class="features">
+
+            <div class="feature">
+                <span>🔒</span>
+
+                <div>
+                    <strong
+                        data-en="Anonymous"
+                        data-ar="مجهول"
+                    >
+                        Anonymous
+                    </strong>
+
+                    <small
+                        data-en="No account needed"
+                        data-ar="لا تحتاج إلى حساب"
+                    >
+                        No account needed
+                    </small>
+                </div>
+            </div>
+
+            <div class="feature">
+                <span>⚡</span>
+
+                <div>
+                    <strong
+                        data-en="Instant"
+                        data-ar="فوري"
+                    >
+                        Instant
+                    </strong>
+
+                    <small
+                        data-en="Connect in seconds"
+                        data-ar="اتصل خلال ثوانٍ"
+                    >
+                        Connect in seconds
+                    </small>
+                </div>
+            </div>
+
+            <div class="feature">
+                <span>🌍</span>
+
+                <div>
+                    <strong
+                        data-en="Worldwide"
+                        data-ar="من كل العالم"
+                    >
+                        Worldwide
+                    </strong>
+
+                    <small
+                        data-en="Meet new people"
+                        data-ar="تعرّف على أشخاص جدد"
+                    >
+                        Meet new people
+                    </small>
+                </div>
+            </div>
+
+        </div>
+
+        <div id="welcomeStatus" class="status-box">
+            <span class="pulse-dot"></span>
+
+            <span
+                data-en="Ready to meet someone new?"
+                data-ar="جاهز للتعرّف على شخص جديد؟"
+            >
+                Ready to meet someone new?
+            </span>
+        </div>
+
+        <button id="startBtn" class="primary-btn">
+
+            <span>🚀</span>
+
+            <span
+                data-en="Start Chat"
+                data-ar="ابدأ المحادثة"
+            >
+                Start Chat
+            </span>
+
+        </button>
+
+        <p
+            class="safety-note"
+            data-en="Please be respectful. Never share personal information."
+            data-ar="يرجى احترام الآخرين وعدم مشاركة معلوماتك الشخصية."
+        >
+            Please be respectful. Never share personal information.
+        </p>
+
+    </section>
+
+    <section
+        id="searchScreen"
+        class="glass search-screen hidden"
+    >
+
+        <div class="radar">
+            <div class="radar-circle radar-one"></div>
+            <div class="radar-circle radar-two"></div>
+            <div class="radar-circle radar-three"></div>
+            <div class="radar-user">👤</div>
+        </div>
+
+        <h2
+            data-en="Finding a Stranger"
+            data-ar="جارٍ البحث عن شخص"
+        >
+            Finding a Stranger
+        </h2>
+
+        <p
+            id="searchText"
+            data-en="Searching for someone online..."
+            data-ar="جارٍ البحث عن مستخدم متصل..."
+        >
+            Searching for someone online...
+        </p>
+
+        <div class="search-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+        </div>
+
+        <button
+            id="cancelSearchBtn"
+            class="secondary-btn"
+            data-en="Cancel Search"
+            data-ar="إلغاء البحث"
+        >
+            Cancel Search
+        </button>
+
+    </section>
+
+    <section
+        id="chatScreen"
+        class="glass chat-screen hidden"
+    >
+
+        <header class="chat-header">
+
+            <div class="stranger-info">
+
+                <div class="avatar">
+                    👤
+                    <span id="statusDot" class="avatar-status"></span>
+                </div>
+
+                <div>
+                    <h2
+                        data-en="Anonymous Stranger"
+                        data-ar="شخص مجهول"
+                    >
+                        Anonymous Stranger
+                    </h2>
+
+                    <p id="chatStatus">
+                        Connected
+                    </p>
+                </div>
+
+            </div>
+
+            <div class="chat-header-actions">
+
+                <div class="timer-box">
+                    ⏱
+                    <span id="chatTimer">00:00</span>
+                </div>
+
+                <button id="nextBtn" class="next-btn">
+                    🎲
+
+                    <span
+                        data-en="Next"
+                        data-ar="التالي"
+                    >
+                        Next
+                    </span>
+                </button>
+
+            </div>
+
+        </header>
+
+        <div id="messages" class="messages">
+
+            <div
+                class="system-message"
+                data-en="You are now connected to a stranger."
+                data-ar="أنت الآن متصل بشخص مجهول."
+            >
+                You are now connected to a stranger.
+            </div>
+
+        </div>
+
+        <div id="typingIndicator" class="typing-indicator">
+
+            <div class="typing-avatar">👤</div>
+
+            <div class="typing-bubble">
+                <span></span>
+                <span></span>
+                <span></span>
+            </div>
+
+            <small
+                data-en="Stranger is typing"
+                data-ar="الشخص يكتب الآن"
+            >
+                Stranger is typing
+            </small>
+
+        </div>
+
+        <div id="emojiPanel" class="emoji-panel hidden">
+
+            <button type="button">😀</button>
+            <button type="button">😂</button>
+            <button type="button">😍</button>
+            <button type="button">🥰</button>
+            <button type="button">😎</button>
+            <button type="button">🤔</button>
+            <button type="button">😢</button>
+            <button type="button">😡</button>
+            <button type="button">👍</button>
+            <button type="button">❤️</button>
+            <button type="button">🔥</button>
+            <button type="button">✨</button>
+            <button type="button">🎉</button>
+            <button type="button">👋</button>
+            <button type="button">🙏</button>
+            <button type="button">💜</button>
+
+        </div>
+
+        <form id="messageForm" class="message-form">
+
+            <button
+                id="emojiBtn"
+                type="button"
+                class="message-icon-btn"
+            >
+                😊
+            </button>
+
+            <input
+                id="messageInput"
+                type="text"
+                placeholder="Type a message..."
+                data-placeholder-en="Type a message..."
+                data-placeholder-ar="اكتب رسالة..."
+                autocomplete="off"
+                maxlength="500"
+            >
+
+            <span id="characterCount" class="character-count">
+                0/500
+            </span>
+
+            <button
+                type="submit"
+                class="send-btn"
+                aria-label="Send message"
+            >
+                ➤
+            </button>
+
+        </form>
+
+    </section>
+
+</main>
+
+<div id="toast" class="toast"></div>
+
+<script src="/socket.io/socket.io.js"></script>
+<script src="app.js"></script>
+
+</body>
+</html>
