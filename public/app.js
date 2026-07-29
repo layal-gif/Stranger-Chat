@@ -1,506 +1,93 @@
+"use strict";
+function getDeviceId() {
+  let deviceId = localStorage.getItem("strangerChatDeviceId");
+
+  if (!deviceId) {
+    deviceId = crypto.randomUUID();
+    localStorage.setItem("strangerChatDeviceId", deviceId);
+  }
+
+  return deviceId;
+}
+
+const deviceId = getDeviceId();
 const socket = io();
+const $ = (id) => document.getElementById(id);
+const screens = [$("welcomeScreen"), $("searchScreen"), $("chatScreen")];
+const countries = { PS:"🇵🇸 Palestine", JO:"🇯🇴 Jordan", IL:"🇮🇱 Israel", TR:"🇹🇷 Turkey", EG:"🇪🇬 Egypt", SA:"🇸🇦 Saudi Arabia", AE:"🇦🇪 UAE", DE:"🇩🇪 Germany", US:"🇺🇸 USA" };
+let language = localStorage.getItem("language") || "en";
+let profileImage = "";
+let typingTimer;
+let mediaRecorder;
+let audioChunks = [];
+let peerConnection;
+let localScreenStream;
 
-const loadingScreen = document.getElementById("loadingScreen");
-
-const welcomeScreen = document.getElementById("welcomeScreen");
-const searchScreen = document.getElementById("searchScreen");
-const chatScreen = document.getElementById("chatScreen");
-
-const startBtn = document.getElementById("startBtn");
-const cancelSearchBtn = document.getElementById("cancelSearchBtn");
-const nextBtn = document.getElementById("nextBtn");
-
-const welcomeStatus = document.getElementById("welcomeStatus");
-const searchText = document.getElementById("searchText");
-const chatStatus = document.getElementById("chatStatus");
-const statusDot = document.getElementById("statusDot");
-
-const onlineText = document.getElementById("onlineText");
-const chatTimer = document.getElementById("chatTimer");
-
-const messages = document.getElementById("messages");
-const messageForm = document.getElementById("messageForm");
-const messageInput = document.getElementById("messageInput");
-const characterCount = document.getElementById("characterCount");
-
-const typingIndicator = document.getElementById("typingIndicator");
-
-const emojiBtn = document.getElementById("emojiBtn");
-const emojiPanel = document.getElementById("emojiPanel");
-
-const themeBtn = document.getElementById("themeBtn");
-const languageBtn = document.getElementById("languageBtn");
-const soundBtn = document.getElementById("soundBtn");
-
-const toast = document.getElementById("toast");
-
-let connected = false;
-let searching = false;
-let soundEnabled = true;
-let currentLanguage = "en";
-
-let typingTimeout;
-let timerInterval;
-let timerSeconds = 0;
-let toastTimeout;
-
-window.addEventListener("load", () => {
-    setTimeout(() => {
-        loadingScreen.classList.add("hide");
-    }, 1000);
-});
-
-function showScreen(screen) {
-    welcomeScreen.classList.add("hidden");
-    searchScreen.classList.add("hidden");
-    chatScreen.classList.add("hidden");
-
-    screen.classList.remove("hidden");
+function showScreen(screen) { screens.forEach((item) => item.classList.toggle("hidden", item !== screen)); }
+function toast(message) { const el=$("toast"); el.textContent=message; el.classList.add("show"); clearTimeout(el._timer); el._timer=setTimeout(()=>el.classList.remove("show"),2600); }
+function t(en, ar) { return language === "ar" ? ar : en; }
+function translate() {
+  document.documentElement.lang=language;
+  document.documentElement.dir=language === "ar" ? "rtl" : "ltr";
+  document.querySelectorAll("[data-en]").forEach((el)=>{ el.textContent=el.dataset[language]; });
+  $("languageBtn").textContent=language === "en" ? "AR" : "EN";
+  $("messageInput").placeholder=t("Write a message…","اكتبي رسالة…");
 }
-
-function translateText(enText, arText) {
-    return currentLanguage === "ar" ? arText : enText;
+function fillCountries() {
+  $("countrySelect").innerHTML=Object.entries(countries).map(([code,name])=>`<option value="${code}">${name}</option>`).join("");
+  $("targetCountrySelect").innerHTML=`<option value="any">${t("🌍 Any country","🌍 أي دولة")}</option>`+$("countrySelect").innerHTML;
+  $("countrySelect").value=localStorage.getItem("country") || "PS";
+  $("targetCountrySelect").value=localStorage.getItem("targetCountry") || "any";
 }
-
-function translatePage() {
-    document.documentElement.lang = currentLanguage;
-
-    document.documentElement.dir =
-        currentLanguage === "ar" ? "rtl" : "ltr";
-
-    document.querySelectorAll("[data-en]").forEach((element) => {
-        const translation = element.dataset[currentLanguage];
-
-        if (translation) {
-            element.textContent = translation;
-        }
-    });
-
-    messageInput.placeholder =
-        currentLanguage === "ar"
-            ? messageInput.dataset.placeholderAr
-            : messageInput.dataset.placeholderEn;
-
-    languageBtn.textContent =
-        currentLanguage === "en" ? "AR" : "EN";
+function fileToDataUrl(file, maxBytes) {
+  return new Promise((resolve,reject)=>{
+    if (!file || file.size > maxBytes) return reject(new Error("File is too large"));
+    const reader=new FileReader(); reader.onload=()=>resolve(reader.result); reader.onerror=reject; reader.readAsDataURL(file);
+  });
 }
-
-function showToast(enText, arText) {
-    toast.textContent = translateText(enText, arText);
-    toast.classList.add("show");
-
-    clearTimeout(toastTimeout);
-
-    toastTimeout = setTimeout(() => {
-        toast.classList.remove("show");
-    }, 2300);
+function appendMessage(type, value, mine) {
+  const wrapper=document.createElement("div"); wrapper.className=`message ${mine ? "me" : "them"}`;
+  if(type==="text") wrapper.textContent=value;
+  if(type==="image"){const img=document.createElement("img");img.src=value;img.alt="Shared image";wrapper.appendChild(img);}
+  if(type==="audio"){const audio=document.createElement("audio");audio.src=value;audio.controls=true;wrapper.appendChild(audio);}
+  $("messages").appendChild(wrapper); $("messages").scrollTop=$("messages").scrollHeight;
 }
-
-function playTone(frequency, duration = 0.12) {
-    if (!soundEnabled) return;
-
-    try {
-        const AudioContextClass =
-            window.AudioContext || window.webkitAudioContext;
-
-        const audioContext = new AudioContextClass();
-        const oscillator = audioContext.createOscillator();
-        const gain = audioContext.createGain();
-
-        oscillator.connect(gain);
-        gain.connect(audioContext.destination);
-
-        oscillator.frequency.value = frequency;
-        oscillator.type = "sine";
-
-        gain.gain.setValueAtTime(
-            0.08,
-            audioContext.currentTime
-        );
-
-        gain.gain.exponentialRampToValueAtTime(
-            0.001,
-            audioContext.currentTime + duration
-        );
-
-        oscillator.start();
-        oscillator.stop(audioContext.currentTime + duration);
-    } catch (error) {
-        console.log("Sound is not supported.");
-    }
-}
-
-function playConnectedSound() {
-    playTone(520);
-
-    setTimeout(() => {
-        playTone(720);
-    }, 120);
-}
-
-function playMessageSound() {
-    playTone(650, 0.1);
-}
-
-function playDisconnectSound() {
-    playTone(240, 0.18);
-}
-
-function startTimer() {
-    clearInterval(timerInterval);
-
-    timerSeconds = 0;
-    updateTimer();
-
-    timerInterval = setInterval(() => {
-        timerSeconds++;
-        updateTimer();
-    }, 1000);
-}
-
-function stopTimer() {
-    clearInterval(timerInterval);
-}
-
-function updateTimer() {
-    const minutes = Math.floor(timerSeconds / 60)
-        .toString()
-        .padStart(2, "0");
-
-    const seconds = (timerSeconds % 60)
-        .toString()
-        .padStart(2, "0");
-
-    chatTimer.textContent = `${minutes}:${seconds}`;
-}
-
-function searchForPartner() {
-    connected = false;
-    searching = true;
-
-    showScreen(searchScreen);
-
-    searchText.textContent = translateText(
-        "Searching for someone online...",
-        "جارٍ البحث عن مستخدم متصل..."
-    );
-
-    socket.emit("find-partner");
-}
-
-function cancelSearch() {
-    searching = false;
-
-    socket.emit("next-partner");
-
-    showScreen(welcomeScreen);
-
-    showToast(
-        "Search cancelled",
-        "تم إلغاء البحث"
-    );
-}
-
-function showChatScreen() {
-    connected = true;
-    searching = false;
-
-    showScreen(chatScreen);
-
-    chatStatus.textContent = translateText(
-        "Connected",
-        "متصل الآن"
-    );
-
-    statusDot.classList.remove("offline");
-
-    typingIndicator.classList.remove("show");
-    emojiPanel.classList.add("hidden");
-
-    messages.innerHTML = "";
-
-    addSystemMessage(
-        translateText(
-            "You are now connected to a stranger.",
-            "أنت الآن متصل بشخص مجهول."
-        )
-    );
-
-    messageInput.disabled = false;
-    messageInput.value = "";
-
-    updateCharacterCount();
-    startTimer();
-    playConnectedSound();
-
-    showToast(
-        "Connected to a stranger",
-        "تم الاتصال بشخص مجهول"
-    );
-
-    messageInput.focus();
-}
-
-function returnToWelcome(messageEn, messageAr) {
-    connected = false;
-    searching = false;
-
-    stopTimer();
-    showScreen(welcomeScreen);
-
-    const statusMessage =
-        welcomeStatus.querySelector("span:last-child");
-
-    if (statusMessage) {
-        statusMessage.textContent =
-            translateText(messageEn, messageAr);
-    }
-}
-
-function getCurrentTime() {
-    return new Date().toLocaleTimeString([], {
-        hour: "2-digit",
-        minute: "2-digit"
-    });
-}
-
-function addMessage(text, type) {
-    const message = document.createElement("div");
-    const time = document.createElement("span");
-
-    message.classList.add("message", type);
-    message.textContent = text;
-
-    time.classList.add("message-time");
-    time.textContent = getCurrentTime();
-
-    message.appendChild(time);
-    messages.appendChild(message);
-
-    messages.scrollTop = messages.scrollHeight;
-}
-
-function addSystemMessage(text) {
-    const message = document.createElement("div");
-
-    message.classList.add("system-message");
-    message.textContent = text;
-
-    messages.appendChild(message);
-    messages.scrollTop = messages.scrollHeight;
-}
-
-function updateCharacterCount() {
-    characterCount.textContent =
-        `${messageInput.value.length}/500`;
-}
-
-startBtn.addEventListener("click", searchForPartner);
-
-cancelSearchBtn.addEventListener("click", cancelSearch);
-
-nextBtn.addEventListener("click", () => {
-    connected = false;
-    searching = true;
-
-    socket.emit("next-partner");
-
-    stopTimer();
-
-    typingIndicator.classList.remove("show");
-    emojiPanel.classList.add("hidden");
-
-    showToast(
-        "Looking for someone new",
-        "جارٍ البحث عن شخص جديد"
-    );
-
-    setTimeout(() => {
-        searchForPartner();
-    }, 350);
-});
-
-messageForm.addEventListener("submit", (event) => {
-    event.preventDefault();
-
-    const text = messageInput.value.trim();
-
-    if (!text || !connected) return;
-
-    addMessage(text, "mine");
-
-    socket.emit("send-message", text);
-    socket.emit("stop-typing");
-
-    messageInput.value = "";
-
-    updateCharacterCount();
-    emojiPanel.classList.add("hidden");
-    messageInput.focus();
-});
-
-messageInput.addEventListener("input", () => {
-    updateCharacterCount();
-
-    if (!connected) return;
-
-    socket.emit("typing");
-
-    clearTimeout(typingTimeout);
-
-    typingTimeout = setTimeout(() => {
-        socket.emit("stop-typing");
-    }, 750);
-});
-
-emojiBtn.addEventListener("click", () => {
-    emojiPanel.classList.toggle("hidden");
-});
-
-emojiPanel.querySelectorAll("button").forEach((button) => {
-    button.addEventListener("click", () => {
-        messageInput.value += button.textContent;
-
-        updateCharacterCount();
-        messageInput.focus();
-
-        socket.emit("typing");
-    });
-});
-
-document.addEventListener("click", (event) => {
-    if (
-        !emojiPanel.contains(event.target) &&
-        event.target !== emojiBtn
-    ) {
-        emojiPanel.classList.add("hidden");
-    }
-});
-
-themeBtn.addEventListener("click", () => {
-    document.body.classList.toggle("light-mode");
-
-    const isLight =
-        document.body.classList.contains("light-mode");
-
-    themeBtn.textContent = isLight ? "☀️" : "🌙";
-
-    showToast(
-        isLight ? "Light mode enabled" : "Dark mode enabled",
-        isLight ? "تم تشغيل الوضع الفاتح" : "تم تشغيل الوضع الداكن"
-    );
-});
-
-languageBtn.addEventListener("click", () => {
-    currentLanguage =
-        currentLanguage === "en" ? "ar" : "en";
-
-    translatePage();
-
-    if (connected) {
-        chatStatus.textContent = translateText(
-            "Connected",
-            "متصل الآن"
-        );
-    }
-
-    showToast(
-        "Language changed",
-        "تم تغيير اللغة"
-    );
-});
-
-soundBtn.addEventListener("click", () => {
-    soundEnabled = !soundEnabled;
-
-    soundBtn.textContent =
-        soundEnabled ? "🔊" : "🔇";
-
-    showToast(
-        soundEnabled ? "Sound enabled" : "Sound muted",
-        soundEnabled ? "تم تشغيل الصوت" : "تم كتم الصوت"
-    );
-
-    if (soundEnabled) {
-        playTone(600);
-    }
-});
-
-socket.on("online-count", (count) => {
-    onlineText.textContent =
-        currentLanguage === "ar"
-            ? `${count} مستخدم متصل`
-            : `${count} ${count === 1 ? "person" : "people"} online`;
-});
-
-socket.on("waiting", () => {
-    if (!searching) return;
-
-    searchText.textContent = translateText(
-        "Waiting for another person to join...",
-        "بانتظار دخول مستخدم آخر..."
-    );
-});
-
-socket.on("matched", () => {
-    showChatScreen();
-});
-
-socket.on("receive-message", (message) => {
-    if (!connected) return;
-
-    typingIndicator.classList.remove("show");
-
-    addMessage(message, "theirs");
-    playMessageSound();
-});
-
-socket.on("partner-typing", () => {
-    if (!connected) return;
-
-    typingIndicator.classList.add("show");
-});
-
-socket.on("partner-stop-typing", () => {
-    typingIndicator.classList.remove("show");
-});
-
-socket.on("partner-left", () => {
-    if (!connected) return;
-
-    connected = false;
-
-    stopTimer();
-    playDisconnectSound();
-
-    typingIndicator.classList.remove("show");
-    statusDot.classList.add("offline");
-
-    chatStatus.textContent = translateText(
-        "Stranger disconnected",
-        "غادر الشخص المحادثة"
-    );
-
-    messageInput.disabled = true;
-
-    addSystemMessage(
-        translateText(
-            "The stranger left the chat. Press Next to meet someone else.",
-            "غادر الشخص المحادثة. اضغط التالي للتعرّف على شخص آخر."
-        )
-    );
-
-    showToast(
-        "The stranger disconnected",
-        "غادر الشخص المحادثة"
-    );
-});
-
-socket.on("ready-again", () => {
-    if (!searching && !connected) {
-        returnToWelcome(
-            "Ready to meet someone else?",
-            "جاهز للتعرّف على شخص آخر؟"
-        );
-    }
-});
+function resetMessages() { $("messages").innerHTML=`<div class="system-message">${t("You are connected. Say hello 👋","تم الاتصال. قولي مرحبًا 👋")}</div>`; }
+function profile() { return {nickname:$("nicknameInput").value.trim()||"Anonymous",country:$("countrySelect").value,targetCountry:$("targetCountrySelect").value,image:profileImage}; }
+function beginSearch(){ if(!$("ageCheck").checked)return toast(t("Please confirm that you are 18+.","يرجى تأكيد أن عمرك 18 سنة أو أكثر.")); const data=profile(); localStorage.setItem("nickname",data.nickname);localStorage.setItem("country",data.country);localStorage.setItem("targetCountry",data.targetCountry); showScreen($("searchScreen"));socket.emit("find-partner",data); }
+function sendMessage(){const value=$("messageInput").value.trim();if(!value)return;socket.emit("send-message",value);appendMessage("text",value,true);$("messageInput").value="";socket.emit("stop-typing");}
+function endCurrent(){stopScreenShare(false);closePeer();socket.emit("next-partner");showScreen($("welcomeScreen"));}
+function setupPartner(data){$("partnerName").textContent=data.nickname||"Anonymous";$("partnerCountry").textContent=countries[data.country]||t("Unknown country","دولة غير معروفة");$("partnerInitial").textContent=(data.nickname||"?").charAt(0).toUpperCase();$("partnerImage").hidden=!data.image;$("partnerInitial").hidden=!!data.image;if(data.image)$("partnerImage").src=data.image;resetMessages();showScreen($("chatScreen"));}
+
+function createPeer(){ if(peerConnection)return peerConnection; peerConnection=new RTCPeerConnection({iceServers:[{urls:"stun:stun.l.google.com:19302"}]}); peerConnection.onicecandidate=(e)=>{if(e.candidate)socket.emit("webrtc-ice",e.candidate);};peerConnection.ontrack=(e)=>{$("remoteScreen").srcObject=e.streams[0];$("screenShareArea").classList.remove("hidden");$("stopShareBtn").classList.add("hidden");};peerConnection.onconnectionstatechange=()=>{if(["failed","closed","disconnected"].includes(peerConnection?.connectionState))closePeer();};return peerConnection; }
+function closePeer(){if(peerConnection){peerConnection.close();peerConnection=null;}if(!localScreenStream){$("remoteScreen").srcObject=null;$("screenShareArea").classList.add("hidden");}}
+async function startScreenShare(){try{localScreenStream=await navigator.mediaDevices.getDisplayMedia({video:true,audio:false});const pc=createPeer();localScreenStream.getTracks().forEach((track)=>pc.addTrack(track,localScreenStream));$("remoteScreen").srcObject=localScreenStream;$("screenShareArea").classList.remove("hidden");$("stopShareBtn").classList.remove("hidden");localScreenStream.getVideoTracks()[0].onended=()=>stopScreenShare();const offer=await pc.createOffer();await pc.setLocalDescription(offer);socket.emit("webrtc-offer",offer);}catch{toast(t("Screen sharing was cancelled.","تم إلغاء مشاركة الشاشة."));}}
+function stopScreenShare(notify=true){if(localScreenStream){localScreenStream.getTracks().forEach((track)=>track.stop());localScreenStream=null;}$("remoteScreen").srcObject=null;$("screenShareArea").classList.add("hidden");$("stopShareBtn").classList.add("hidden");if(notify)socket.emit("screen-share-stopped");closePeer();}
+
+async function toggleRecording(){if(mediaRecorder?.state==="recording"){mediaRecorder.stop();return;}try{const stream=await navigator.mediaDevices.getUserMedia({audio:true});audioChunks=[];mediaRecorder=new MediaRecorder(stream);mediaRecorder.ondataavailable=(e)=>audioChunks.push(e.data);mediaRecorder.onstop=()=>{stream.getTracks().forEach((track)=>track.stop());$("recordingStatus").classList.add("hidden");$("recordBtn").textContent="●";const blob=new Blob(audioChunks,{type:mediaRecorder.mimeType||"audio/webm"});if(blob.size>2200000)return toast(t("Recording is too long.","التسجيل طويل جدًا."));const reader=new FileReader();reader.onload=()=>{socket.emit("send-audio",reader.result);appendMessage("audio",reader.result,true);};reader.readAsDataURL(blob);};mediaRecorder.start();$("recordingStatus").classList.remove("hidden");$("recordBtn").textContent="■";}catch{toast(t("Microphone permission is required.","يلزم السماح باستخدام الميكروفون."));}}
+
+$("nicknameInput").value=localStorage.getItem("nickname")||"";
+fillCountries();translate();
+$("languageBtn").onclick=()=>{language=language==="en"?"ar":"en";localStorage.setItem("language",language);translate();fillCountries();};
+$("themeBtn").onclick=()=>{document.body.classList.toggle("dark");localStorage.setItem("dark",document.body.classList.contains("dark"));};
+if(localStorage.getItem("dark")==="true")document.body.classList.add("dark");
+$("profileImageInput").onchange=async(e)=>{try{profileImage=await fileToDataUrl(e.target.files[0],800000);$("profilePreview").src=profileImage;$("profilePreview").hidden=false;$("profilePlaceholder").hidden=true;}catch(err){toast(err.message);}};
+$("startBtn").onclick=beginSearch;$("cancelSearchBtn").onclick=endCurrent;$("nextBtn").onclick=endCurrent;$("sendBtn").onclick=sendMessage;
+$("messageInput").onkeydown=(e)=>{if(e.key==="Enter"&&!e.shiftKey){e.preventDefault();sendMessage();}};
+$("messageInput").oninput=()=>{socket.emit("typing");clearTimeout(typingTimer);typingTimer=setTimeout(()=>socket.emit("stop-typing"),900);};
+$("imageBtn").onclick=()=>$("imageInput").click();
+$("imageInput").onchange=async(e)=>{try{const data=await fileToDataUrl(e.target.files[0],2000000);socket.emit("send-image",data);appendMessage("image",data,true);e.target.value="";}catch(err){toast(err.message);}};
+$("recordBtn").onclick=toggleRecording;$("shareScreenBtn").onclick=startScreenShare;$("stopShareBtn").onclick=()=>stopScreenShare();
+$("reportBtn").onclick=()=>$("reportDialog").showModal();$("confirmReportBtn").onclick=()=>socket.emit("report-user",$("reportReason").value);
+$("blockBtn").onclick=()=>{if(confirm(t("Block this person and end the chat?","حظر هذا الشخص وإنهاء الدردشة؟")))socket.emit("block-user");};
+
+socket.on("online-count",(count)=>$("onlineText").textContent=t(`${count} people online`,`${count} مستخدم متصل`));
+socket.on("waiting",()=>showScreen($("searchScreen")));socket.on("matched",setupPartner);
+socket.on("receive-message",(msg)=>appendMessage("text",msg,false));socket.on("receive-image",(data)=>appendMessage("image",data,false));socket.on("receive-audio",(data)=>appendMessage("audio",data,false));
+socket.on("partner-typing",()=>$("typingIndicator").classList.remove("hidden"));socket.on("partner-stop-typing",()=>$("typingIndicator").classList.add("hidden"));
+socket.on("partner-left",()=>{stopScreenShare(false);toast(t("The stranger left the chat.","غادر الشخص المحادثة."));showScreen($("welcomeScreen"));});
+socket.on("ready-again",()=>showScreen($("welcomeScreen")));socket.on("warning",toast);socket.on("report-sent",()=>toast(t("Report sent. Thank you.","تم إرسال البلاغ. شكرًا لك.")));socket.on("blocked",()=>{toast(t("User blocked.","تم حظر المستخدم."));showScreen($("welcomeScreen"));});
+socket.on("webrtc-offer",async(offer)=>{try{const pc=createPeer();await pc.setRemoteDescription(offer);const answer=await pc.createAnswer();await pc.setLocalDescription(answer);socket.emit("webrtc-answer",answer);}catch{closePeer();}});
+socket.on("webrtc-answer",async(answer)=>{try{await peerConnection?.setRemoteDescription(answer);}catch{closePeer();}});
+socket.on("webrtc-ice",async(candidate)=>{try{await createPeer().addIceCandidate(candidate);}catch{}});
+socket.on("screen-share-stopped",()=>{closePeer();toast(t("Screen sharing ended.","انتهت مشاركة الشاشة."));});

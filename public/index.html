@@ -1,418 +1,104 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en" dir="ltr">
 <head>
-    <meta charset="UTF-8">
-
-    <meta
-        name="viewport"
-        content="width=device-width, initial-scale=1.0"
-    >
-
-    <meta
-        name="description"
-        content="Anonymous stranger chat application"
-    >
-
-    <title>Stranger Chat</title>
-
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-
-    <link rel="preconnect"
-          href="https://fonts.gstatic.com"
-          crossorigin>
-
-    <link
-        href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap"
-        rel="stylesheet"
-    >
-
-    <link rel="stylesheet" href="style.css">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#f6f7ff">
+  <title>Stranger Chat</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
 </head>
-
 <body>
-
-<div id="loadingScreen" class="loading-screen">
-    <div class="loader-logo">💬</div>
-    <h2>Stranger Chat</h2>
-
-    <div class="loading-dots">
-        <span></span>
-        <span></span>
-        <span></span>
+  <div class="aurora" aria-hidden="true"></div>
+  <header class="topbar">
+    <a class="brand" href="#" aria-label="Stranger Chat home"><span class="brand-mark">S</span><span><b>Stranger Chat</b><small id="onlineText">0 people online</small></span></a>
+    <div class="top-actions">
+      <button id="themeBtn" class="icon-btn" type="button" title="Theme">☾</button>
+      <button id="languageBtn" class="lang-btn" type="button">AR</button>
     </div>
-</div>
+  </header>
 
-<div class="background">
-    <div class="blob blob1"></div>
-    <div class="blob blob2"></div>
-    <div class="blob blob3"></div>
-    <div class="blob blob4"></div>
-</div>
+  <main class="shell">
+    <section id="welcomeScreen" class="card welcome-card">
+      <div class="hero-badge">✦ Meet the world</div>
+      <h1 data-en="A new conversation is one click away." data-ar="محادثة جديدة تبعد عنك ضغطة واحدة.">A new conversation is one click away.</h1>
+      <p data-en="Chat anonymously, share moments, and move on whenever you want." data-ar="دردشي بشكل مجهول، شاركي اللحظات، وانتقلي لشخص آخر وقت ما بدك.">Chat anonymously, share moments, and move on whenever you want.</p>
 
-<nav class="top-nav">
+      <div class="profile-grid">
+        <label class="photo-picker" for="profileImageInput">
+          <img id="profilePreview" alt="Profile preview" hidden>
+          <span id="profilePlaceholder">＋</span>
+          <small data-en="Photo" data-ar="صورة">Photo</small>
+        </label>
+        <input id="profileImageInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
 
-    <div class="brand">
-        <div class="brand-icon">💬</div>
-
-        <div>
-            <strong>Stranger Chat</strong>
-
-            <span
-                id="onlineText"
-                data-en="0 people online"
-                data-ar="0 مستخدم متصل"
-            >
-                0 people online
-            </span>
+        <div class="fields">
+          <label><span data-en="Nickname" data-ar="الاسم المستعار">Nickname</span><input id="nicknameInput" maxlength="24" autocomplete="off" placeholder="Anonymous"></label>
+          <div class="two-cols">
+            <label><span data-en="Your country" data-ar="دولتك">Your country</span><select id="countrySelect"></select></label>
+            <label><span data-en="Match with" data-ar="الدولة المفضلة">Match with</span><select id="targetCountrySelect"></select></label>
+          </div>
         </div>
-    </div>
+      </div>
 
-    <div class="nav-actions">
-
-        <button
-            id="soundBtn"
-            class="icon-btn"
-            title="Sound"
-        >
-            🔊
-        </button>
-
-        <button
-            id="themeBtn"
-            class="icon-btn"
-            title="Change theme"
-        >
-            🌙
-        </button>
-
-        <button
-            id="languageBtn"
-            class="language-btn"
-        >
-            AR
-        </button>
-
-    </div>
-
-</nav>
-
-<main class="app">
-
-    <section
-        id="welcomeScreen"
-        class="glass welcome-screen"
-    >
-
-        <div class="hero-icon">
-            <div class="hero-ring"></div>
-            <span>👤</span>
-        </div>
-
-        <div class="rating">
-            ★★★★★
-        </div>
-
-        <h1 data-en="Meet Someone New"
-            data-ar="تعرّف على شخص جديد">
-            Meet Someone New
-        </h1>
-
-        <p
-            class="subtitle"
-            data-en="Start an instant anonymous conversation with someone from anywhere in the world."
-            data-ar="ابدأ محادثة فورية ومجهولة مع شخص من أي مكان في العالم."
-        >
-            Start an instant anonymous conversation with someone
-            from anywhere in the world.
-        </p>
-
-        <div class="features">
-
-            <div class="feature">
-                <span>🔒</span>
-
-                <div>
-                    <strong
-                        data-en="Anonymous"
-                        data-ar="مجهول"
-                    >
-                        Anonymous
-                    </strong>
-
-                    <small
-                        data-en="No account needed"
-                        data-ar="لا تحتاج إلى حساب"
-                    >
-                        No account needed
-                    </small>
-                </div>
-            </div>
-
-            <div class="feature">
-                <span>⚡</span>
-
-                <div>
-                    <strong
-                        data-en="Instant"
-                        data-ar="فوري"
-                    >
-                        Instant
-                    </strong>
-
-                    <small
-                        data-en="Connect in seconds"
-                        data-ar="اتصل خلال ثوانٍ"
-                    >
-                        Connect in seconds
-                    </small>
-                </div>
-            </div>
-
-            <div class="feature">
-                <span>🌍</span>
-
-                <div>
-                    <strong
-                        data-en="Worldwide"
-                        data-ar="من كل العالم"
-                    >
-                        Worldwide
-                    </strong>
-
-                    <small
-                        data-en="Meet new people"
-                        data-ar="تعرّف على أشخاص جدد"
-                    >
-                        Meet new people
-                    </small>
-                </div>
-            </div>
-
-        </div>
-
-        <div id="welcomeStatus" class="status-box">
-            <span class="pulse-dot"></span>
-
-            <span
-                data-en="Ready to meet someone new?"
-                data-ar="جاهز للتعرّف على شخص جديد؟"
-            >
-                Ready to meet someone new?
-            </span>
-        </div>
-
-        <button id="startBtn" class="primary-btn">
-
-            <span>🚀</span>
-
-            <span
-                data-en="Start Chat"
-                data-ar="ابدأ المحادثة"
-            >
-                Start Chat
-            </span>
-
-        </button>
-
-        <p
-            class="safety-note"
-            data-en="Please be respectful. Never share personal information."
-            data-ar="يرجى احترام الآخرين وعدم مشاركة معلوماتك الشخصية."
-        >
-            Please be respectful. Never share personal information.
-        </p>
-
+      <label class="safety-check"><input id="ageCheck" type="checkbox"><span data-en="I am 18+ and I agree to chat respectfully." data-ar="عمري 18+ وأوافق على الدردشة باحترام.">I am 18+ and I agree to chat respectfully.</span></label>
+      <button id="startBtn" class="primary-btn" type="button"><span data-en="Start chatting" data-ar="ابدئي الدردشة">Start chatting</span><b>→</b></button>
+      <div class="trust-row"><span>🔒 Anonymous</span><span>🛡️ Moderated</span><span>⚡ Instant</span></div>
     </section>
 
-    <section
-        id="searchScreen"
-        class="glass search-screen hidden"
-    >
-
-        <div class="radar">
-            <div class="radar-circle radar-one"></div>
-            <div class="radar-circle radar-two"></div>
-            <div class="radar-circle radar-three"></div>
-            <div class="radar-user">👤</div>
-        </div>
-
-        <h2
-            data-en="Finding a Stranger"
-            data-ar="جارٍ البحث عن شخص"
-        >
-            Finding a Stranger
-        </h2>
-
-        <p
-            id="searchText"
-            data-en="Searching for someone online..."
-            data-ar="جارٍ البحث عن مستخدم متصل..."
-        >
-            Searching for someone online...
-        </p>
-
-        <div class="search-dots">
-            <span></span>
-            <span></span>
-            <span></span>
-        </div>
-
-        <button
-            id="cancelSearchBtn"
-            class="secondary-btn"
-            data-en="Cancel Search"
-            data-ar="إلغاء البحث"
-        >
-            Cancel Search
-        </button>
-
+    <section id="searchScreen" class="card state-card hidden">
+      <div class="radar"><span></span></div>
+      <h2 data-en="Finding someone for you…" data-ar="جاري البحث عن شخص مناسب…">Finding someone for you…</h2>
+      <p data-en="This usually takes only a few seconds." data-ar="غالبًا يستغرق هذا بضع ثوانٍ فقط.">This usually takes only a few seconds.</p>
+      <button id="cancelSearchBtn" class="secondary-btn" type="button" data-en="Cancel" data-ar="إلغاء">Cancel</button>
     </section>
 
-    <section
-        id="chatScreen"
-        class="glass chat-screen hidden"
-    >
+    <section id="chatScreen" class="chat-layout hidden">
+      <aside class="card partner-panel">
+        <div class="partner-avatar"><img id="partnerImage" alt="Partner" hidden><span id="partnerInitial">?</span><i></i></div>
+        <h2 id="partnerName">Stranger</h2>
+        <p id="partnerCountry">Connected</p>
+        <div class="partner-actions">
+          <button id="reportBtn" class="soft-btn" type="button">⚑ <span data-en="Report" data-ar="إبلاغ">Report</span></button>
+          <button id="blockBtn" class="danger-btn" type="button">⊘ <span data-en="Block" data-ar="حظر">Block</span></button>
+        </div>
+        <div class="safety-note" data-en="Never share passwords, banking details, or your exact address." data-ar="لا تشاركي كلمات المرور أو معلومات البنك أو عنوانك الدقيق.">Never share passwords, banking details, or your exact address.</div>
+      </aside>
 
-        <header class="chat-header">
-
-            <div class="stranger-info">
-
-                <div class="avatar">
-                    👤
-                    <span id="statusDot" class="avatar-status"></span>
-                </div>
-
-                <div>
-                    <h2
-                        data-en="Anonymous Stranger"
-                        data-ar="شخص مجهول"
-                    >
-                        Anonymous Stranger
-                    </h2>
-
-                    <p id="chatStatus">
-                        Connected
-                    </p>
-                </div>
-
-            </div>
-
-            <div class="chat-header-actions">
-
-                <div class="timer-box">
-                    ⏱
-                    <span id="chatTimer">00:00</span>
-                </div>
-
-                <button id="nextBtn" class="next-btn">
-                    🎲
-
-                    <span
-                        data-en="Next"
-                        data-ar="التالي"
-                    >
-                        Next
-                    </span>
-                </button>
-
-            </div>
-
-        </header>
-
-        <div id="messages" class="messages">
-
-            <div
-                class="system-message"
-                data-en="You are now connected to a stranger."
-                data-ar="أنت الآن متصل بشخص مجهول."
-            >
-                You are now connected to a stranger.
-            </div>
-
+      <section class="card chat-card">
+        <div class="chat-header">
+          <div><b id="chatTitle">Live chat</b><small id="statusText">Connected</small></div>
+          <div class="chat-header-actions"><button id="shareScreenBtn" class="icon-btn" type="button" title="Share screen">▣</button><button id="nextBtn" class="next-btn" type="button" data-en="Next" data-ar="التالي">Next</button></div>
         </div>
 
-        <div id="typingIndicator" class="typing-indicator">
+        <div id="screenShareArea" class="screen-area hidden"><video id="remoteScreen" autoplay playsinline></video><button id="stopShareBtn" class="stop-share hidden" type="button">Stop sharing</button></div>
+        <div id="messages" class="messages" aria-live="polite"><div class="system-message" data-en="You are connected. Say hello 👋" data-ar="تم الاتصال. قولي مرحبًا 👋">You are connected. Say hello 👋</div></div>
+        <div id="typingIndicator" class="typing hidden"><span></span><span></span><span></span></div>
 
-            <div class="typing-avatar">👤</div>
-
-            <div class="typing-bubble">
-                <span></span>
-                <span></span>
-                <span></span>
-            </div>
-
-            <small
-                data-en="Stranger is typing"
-                data-ar="الشخص يكتب الآن"
-            >
-                Stranger is typing
-            </small>
-
+        <div class="composer">
+          <input id="imageInput" type="file" accept="image/jpeg,image/png,image/webp" hidden>
+          <button id="imageBtn" class="composer-btn" type="button" title="Send image">＋</button>
+          <button id="recordBtn" class="composer-btn" type="button" title="Record voice">●</button>
+          <textarea id="messageInput" rows="1" maxlength="500" placeholder="Write a message…"></textarea>
+          <button id="sendBtn" class="send-btn" type="button">➤</button>
         </div>
-
-        <div id="emojiPanel" class="emoji-panel hidden">
-
-            <button type="button">😀</button>
-            <button type="button">😂</button>
-            <button type="button">😍</button>
-            <button type="button">🥰</button>
-            <button type="button">😎</button>
-            <button type="button">🤔</button>
-            <button type="button">😢</button>
-            <button type="button">😡</button>
-            <button type="button">👍</button>
-            <button type="button">❤️</button>
-            <button type="button">🔥</button>
-            <button type="button">✨</button>
-            <button type="button">🎉</button>
-            <button type="button">👋</button>
-            <button type="button">🙏</button>
-            <button type="button">💜</button>
-
-        </div>
-
-        <form id="messageForm" class="message-form">
-
-            <button
-                id="emojiBtn"
-                type="button"
-                class="message-icon-btn"
-            >
-                😊
-            </button>
-
-            <input
-                id="messageInput"
-                type="text"
-                placeholder="Type a message..."
-                data-placeholder-en="Type a message..."
-                data-placeholder-ar="اكتب رسالة..."
-                autocomplete="off"
-                maxlength="500"
-            >
-
-            <span id="characterCount" class="character-count">
-                0/500
-            </span>
-
-            <button
-                type="submit"
-                class="send-btn"
-                aria-label="Send message"
-            >
-                ➤
-            </button>
-
-        </form>
-
+        <small id="recordingStatus" class="recording-status hidden">Recording… tap again to send</small>
+      </section>
     </section>
+  </main>
 
-</main>
-
-<div id="toast" class="toast"></div>
-
-<script src="/socket.io/socket.io.js"></script>
-<script src="app.js"></script>
-
+  <dialog id="reportDialog">
+    <form method="dialog" class="dialog-card">
+      <h3 data-en="Report this user" data-ar="الإبلاغ عن المستخدم">Report this user</h3>
+      <p data-en="Choose the main reason." data-ar="اختاري السبب الرئيسي.">Choose the main reason.</p>
+      <select id="reportReason"><option>Harassment</option><option>Sexual content</option><option>Spam</option><option>Hate speech</option><option>Underage user</option><option>Other</option></select>
+      <div><button value="cancel" class="secondary-btn">Cancel</button><button id="confirmReportBtn" value="default" class="danger-btn">Send report</button></div>
+    </form>
+  </dialog>
+  <div id="toast" class="toast" role="status" aria-live="polite"></div>
+  <script src="/socket.io/socket.io.js"></script>
+  <script src="app.js"></script>
 </body>
 </html>
